@@ -1,23 +1,103 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Questionnaire</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <div class="container">
-    <h1>Questionnaire</h1>
-    <form id="quiz-form"></form>
-    <button onclick="submitQuiz()">Soumettre</button>
-    <div id="results" style="display:none;">
-      <h2>Merci !</h2>
-      <div id="results-content"></div>
-      <button onclick="restartQuiz()">Recommencer</button>
-    </div>
-  </div>
+<script>
+  async function creerProfil() {
+    const nom = document.getElementById("nom").value.trim();
+    const prenom = document.getElementById("prenom").value.trim();
+    const mdp = document.getElementById("mdp").value;
+    const confirm = document.getElementById("confirm").value;
+    const role = document.getElementById("role").value;
 
-  <script src="script.js"></script>
-</body>
-</html>
+    if (!nom || !prenom || !mdp || mdp !== confirm) return alert("Erreur");
+
+    await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom, prenom, mdp, role })
+    });
+
+    alert("Profil créé");
+    afficherSection("login-section");
+  }
+
+  async function seConnecter() {
+    const nom = document.getElementById("loginNom").value.trim();
+    const mdp = document.getElementById("loginMdp").value;
+
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom, mdp })
+    });
+
+    const user = await res.json();
+    if (!user) return alert("Erreur de connexion");
+
+    if (user.role === "directrice" && mdp === "123456" || user.role === "promoteur" && mdp === "654321") {
+      afficherSection("scolarite-section");
+      afficherEleves();
+    } else {
+      afficherSection("eleve-section");
+    }
+  }
+
+  async function inscrireEleve() {
+    const nom = document.getElementById("eNom").value.trim();
+    const prenom = document.getElementById("ePrenom").value.trim();
+    const annee = document.getElementById("eAnnee").value;
+    const tuteur = document.getElementById("eTuteur").value;
+    const classe = document.getElementById("eClasse").value;
+
+    const res = await fetch("/api/eleve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom, prenom, annee, tuteur, classe })
+    });
+
+    const data = await res.json();
+    alert("Élève inscrit. Matricule : " + data.matricule);
+  }
+
+  async function afficherEleves() {
+    const res = await fetch("/api/eleves");
+    const eleves = await res.json();
+    const container = document.getElementById("listeEleves");
+    container.innerHTML = "";
+
+    const classes = [...new Set(eleves.map(e => e.classe))];
+    classes.forEach(cl => {
+      const div = document.createElement("div");
+      div.innerHTML = `<h3>${cl}</h3>`;
+      eleves.filter(e => e.classe === cl).forEach(e => {
+        const reste = 70000 - e.paye;
+        div.innerHTML += `
+          <div>
+            <strong>${e.nom} ${e.prenom}</strong> (${e.matricule}) - Payé : ${e.paye} F - Reste : ${reste} F
+            <input type="number" placeholder="Montant" id="montant-${e.matricule}">
+            <button onclick="ajouterPaiement('${e.matricule}')">Ajouter</button>
+          </div>
+        `;
+      });
+      container.appendChild(div);
+    });
+  }
+
+  async function ajouterPaiement(matricule) {
+    const montant = parseInt(document.getElementById(`montant-${matricule}`).value);
+    if (!montant) return;
+
+    await fetch("/api/paiement", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matricule, montant })
+    });
+
+    alert("Paiement ajouté");
+    afficherEleves();
+  }
+
+  function afficherSection(id) {
+    ["profile-section", "login-section", "eleve-section", "scolarite-section"].forEach(s => {
+      document.getElementById(s).style.display = s === id ? "block" : "none";
+    });
+  }
+  </script>
+  
