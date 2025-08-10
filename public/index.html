@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Questionnaire</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Questionnaire</h1>
+    <form id="quiz-form"></form>
+    <button onclick="submitQuiz()">Soumettre</button>
+    <div id="results" style="display:none;">
+      <h2>Merci !</h2>
+      <div id="results-content"></div>
+      <button onclick="restartQuiz()">Recommencer</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
